@@ -6,6 +6,7 @@ enum Addr : String, CaseIterable{
     case auv = "auv.local"
     case home = "Kam-Air.local"
     case Lab = "Kam-Studio.local"
+    case custom = "custom Address"
 }
 
 enum BackgroundMode : String, CaseIterable{
@@ -47,6 +48,7 @@ extension CaseIterable where Self: Equatable {
 
 class Settings : ObservableObject{
     @Published var addr : Addr = .rov
+    @Published var customAddr : String = "localhost"
     @Published var backgroundMode : BackgroundMode = .Icon
     @Published var generalObjectDetection = true
     @Published var modelState : ModelState = .noModel
@@ -54,5 +56,11 @@ class Settings : ObservableObject{
     @Published var outputPower : OutputPower = .Quarter
     @Published var virtualJoyStick = false
     @Published var compactDebugView = true
-    @Published var streamMode : StreamMode = .Both
+    @Published var streamMode : StreamMode = .Pause
+    func getAddr() -> String{
+        if self.addr == .custom{
+            return self.customAddr
+        }
+        return self.addr.rawValue
+    }
 }

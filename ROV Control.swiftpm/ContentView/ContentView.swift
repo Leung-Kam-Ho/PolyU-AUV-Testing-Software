@@ -8,10 +8,11 @@ struct ContentView: View {
     @Environment(\.colorScheme) private var colorScheme
     @StateObject var viewModel = ViewModel()
     @StateObject var visionViewModel = VisionViewModel()
-    @State var tabViewSelection = "Camera"
+    @State var tabViewSelection = "main"
     @State var key : String = ""
     @State var modeShow = false
     @State var taskShow = false
+    @State var speedPopUp = false
     @State var debugShow = false
     let blockMaxHeight : CGFloat = 150
     let blockMaxWidth : CGFloat = 150
@@ -75,18 +76,6 @@ struct ContentView: View {
             self.inputManager.outputState.UD = 0
         })
         .frame(maxWidth: blockMaxWidth,maxHeight:blockMaxHeight)
-        
-        let slidingPadLeft =
-        SlidingPad(horizontalValue: self.$inputManager.outputState.LR,
-                   verticalValue: self.$inputManager.outputState.FB,
-                   horizontalMax: CGFloat(self.settings.outputPower.rawValue),
-                   verticalMax: CGFloat(self.settings.outputPower.rawValue))
-        
-        let slidingPadRight =
-        SlidingPad(horizontalValue: self.$inputManager.outputState.turn_LR,
-                   verticalValue: self.$inputManager.outputState.UD,
-                   horizontalMax:  CGFloat(self.settings.outputPower.rawValue),
-                   verticalMax:  CGFloat(self.settings.outputPower.rawValue))
         let infoView =
         Color.clear
             .overlay(alignment: .top, content:{
@@ -112,7 +101,7 @@ struct ContentView: View {
                                 ForEach(OnGoingTask.allCases, id:\.self){ t in
                                     Button(action:{
                                         withAnimation{
-                                            self.viewModel.POST_changeTask(addr: settings.addr, task: t)
+                                            self.viewModel.POST_changeTask(addr: settings.getAddr(), task: t)
                                             self.taskShow.toggle()
                                         }
                                     }){
@@ -148,7 +137,7 @@ struct ContentView: View {
                                 
                                 ForEach(viewModel.rovStatus.modeList, id:\.self){ mode in
                                     Button(action:{
-                                        viewModel.POST_setMode(addr: settings.addr, mode: mode)
+                                        viewModel.POST_setMode(addr: settings.getAddr(), mode: mode)
                                         withAnimation{
                                             
                                             self.modeShow.toggle()
@@ -182,7 +171,7 @@ struct ContentView: View {
                     Text("FPS: \(viewModel.FPS)")
                         .debugBackground()
                 }.padding()
-
+                
                 
             })
             .overlay(alignment: .topTrailing, content: {
@@ -214,31 +203,31 @@ struct ContentView: View {
                         let UDImg =  UD == 0 ? "minus.circle.fill" : (UD > 0 ? "arrowtriangle.up.circle.fill" : "arrowtriangle.down.circle.fill")
                         let FBImg =  FB == 0 ? "arrow.up.arrow.down.circle.fill" : (FB > 0 ? "arrow.up.circle.fill" : "arrow.down.circle.fill")
                         Label {
-                            Text(String(format: "%.2f",viewModel.rovStatus.forwardPWM))
+                            Text(String(format: "%d",viewModel.rovStatus.forwardPWM))
                         } icon: {
                             Image(systemName: FBImg)
                                 .font(.title)
                         }.debugBackground()
                         Label {
-                            Text(String(format: "%.2f",viewModel.rovStatus.LRPWM))
+                            Text(String(format: "%d",viewModel.rovStatus.LRPWM))
                         } icon: {
                             Image(systemName: LRImg)
                                 .font(.title)
                         }.debugBackground()
                         Label {
-                            Text(String(format: "%.2f",viewModel.rovStatus.yawPWM))
+                            Text(String(format: "%d",viewModel.rovStatus.yawPWM))
                         } icon: {
                             Image(systemName: turnImg)
                                 .font(.title)
                         }.debugBackground()
                         Label {
-                            Text(String(format: "%.2f",viewModel.rovStatus.depthPWM))
+                            Text(String(format: "%d",viewModel.rovStatus.depthPWM))
                         } icon: {
                             Image(systemName: UDImg)
                                 .font(.title)
                         }.debugBackground()
                         Label {
-                            Text(String(format: "%.2f",viewModel.rovStatus.rollPWM))
+                            Text(String(format: "%d",viewModel.rovStatus.rollPWM))
                         } icon: {
                             Image(systemName: "sleep.circle.fill")
                                 .font(.title)
@@ -248,21 +237,44 @@ struct ContentView: View {
                     let percentage = Int(settings.outputPower.rawValue)
                     Button(action: {
                         withAnimation{
-                            settings.outputPower = settings.outputPower.next()
+                            //                            settings.outputPower = settings.outputPower.next()
+                            speedPopUp.toggle()
                         }
                     }){
-                        Label {
-                            Text(String(percentage))
-                        } icon: {
-                            Image(systemName: "gauge.with.dots.needle.\(percentage)percent")
-                                .font(.title)
-                        }.debugBackground()
+                        
+                        Text(String(percentage))
+                            .debugBackground()
                     }
+                    .popover(isPresented: $speedPopUp, content: {
+                        HStack(content: {
+                            Text("Power:")
+                            Picker("Output Power (%)",selection: $settings.outputPower) {
+                                ForEach(OutputPower.allCases, id:\.self){ outputPower in
+                                    Text("\(Int(outputPower.rawValue))")
+                                        .tag(outputPower)
+                                    
+                                }
+                            }.pickerStyle(.segmented)
+                        })
+                    })
                     .buttonStyle(.plain)
-
+                    
                     
                 }
                 .padding()
+            })
+            .overlay(alignment: .center, content: {
+                if settings.streamMode == .Pause{
+                    Button(action:{
+                        withAnimation{
+                            settings.streamMode = .Both
+                        }
+                    }){
+                        Label("Stream Paused", systemImage: "play.fill")
+                    }
+                    .debugBackground()
+                    
+                }
             })
         let mainView =
         CameraView(image: viewModel.footage ?? ( colorScheme == .dark ? viewModel.waterMark : viewModel.waterMarkB), mask : settings.generalObjectDetection ? visionViewModel.result : nil)
@@ -294,36 +306,28 @@ struct ContentView: View {
             
             VStack{
                 if !verticalView{
-                        ZStack{
-                            mainView
-                            //                                    .frame(width: width,height:height)
-                            TabView(selection:$tabViewSelection,content: {
-                               
-                                infoView
-                                    .tag("main")
-                                VStack{
-                                    SettingsView()
-                                        .tag("Settings")
-                                    Image("Anson")
-                                        .resizable()
-                                        .scaledToFit()
-                                }
-                            })
-                            .tabViewStyle(.page)
-                            if tabViewSelection == "Camera"{
-                                if settings.virtualJoyStick{
-                                    Color.clear
-                                        .overlay(alignment: .bottomLeading, content: {
-                                            slidingPadLeft
-                                        })
-                                        .overlay(alignment: .bottomTrailing, content: {
-                                            slidingPadRight
-                                        })
-                                }
-                            }
+                    ZStack{
+                        mainView
+                        //                                    .frame(width: width,height:height)
+                        TabView(selection:$tabViewSelection,content: {
                             
-                        }
+                            
+                            Color.clear
+                                .tag("clear")
+                            infoView
+                                .tag("main")
+                            VStack{
+                                SettingsView()
+                                    .tag("Settings")
+                                Image("Anson")
+                                    .resizable()
+                                    .scaledToFit()
+                            }
+                        })
+                        .tabViewStyle(.page)
                         
+                    }
+                    
                     
                     
                 }else{
@@ -361,11 +365,13 @@ struct ContentView: View {
             if let new = new,
                let gamepad = inputManager.gamepad{
                 if new == gamepad.buttonA{
-                    self.viewModel.POST_changeTask(addr: settings.addr, task: .ROV)
+                    self.viewModel.POST_changeTask(addr: settings.getAddr()
+                                                   
+                                                   , task: .ROV)
                     print("ROV")
                 }
                 else if new == gamepad.buttonB{
-                    self.viewModel.POST_changeTask(addr: settings.addr, task: .TASK_Demo)
+                    self.viewModel.POST_changeTask(addr: settings.getAddr(), task: .TASK_Demo)
                     print("Demo")
                 }
             }
@@ -387,23 +393,25 @@ struct ContentView: View {
         })
         .onAppear(perform: {
             self.inputManager.ObserveForGameControllers()
-            Timer.scheduledTimer(withTimeInterval: 1/15, repeats: true) { timer in
-                if settings.streamMode == .Both || settings.streamMode == .VideoOnly{
-                    viewModel.GET_Request(addr:settings.addr)
-                    if settings.generalObjectDetection{
-                        if let footage = viewModel.footage{
-                            visionViewModel.processImage_YOLOv3(footage)
+            DispatchQueue.global(qos: .userInitiated).async{
+                while true{
+                    if settings.streamMode == .Both || settings.streamMode == .VideoOnly{
+                        viewModel.GET_Request(addr:settings.getAddr())
+                        if settings.generalObjectDetection{
+                            if let footage = viewModel.footage{
+                                visionViewModel.processImage_YOLOv3(footage)
+                            }
                         }
                     }
+                    
                 }
-                
-                
             }
-            Timer.scheduledTimer(withTimeInterval: 1/10, repeats: true){ timer in
-                if settings.streamMode == .Both || settings.streamMode == .InputOnly{
-                    viewModel.POST_Request_Status(addr: settings.addr, update: self.inputManager.outputState,power:settings.outputPower.rawValue)
+            DispatchQueue.global(qos: .userInitiated).async{
+                while true{
+                    if settings.streamMode == .Both || settings.streamMode == .InputOnly{
+                        viewModel.POST_Request_Status(addr: settings.getAddr(), update: self.inputManager.outputState,power:settings.outputPower.rawValue)
+                    }
                 }
-                
             }
             Timer.scheduledTimer(withTimeInterval: 1, repeats: true){ timer in
                 viewModel.FPS = viewModel.FPS_Count
@@ -416,6 +424,8 @@ struct ContentView: View {
     
 }
 
+
+
 struct DBG: ViewModifier {
     func body(content: Content) -> some View {
         content
@@ -426,22 +436,11 @@ struct DBG: ViewModifier {
             .shadow(radius: /*@START_MENU_TOKEN@*/10/*@END_MENU_TOKEN@*/)
     }
 }
-struct DBG_noPad: ViewModifier {
-    func body(content: Content) -> some View {
-        content
-            .foregroundStyle(.orange)
-            .background(.ultraThinMaterial)
-            .clipShape(.rect(cornerRadius: 25))
-            .shadow(radius: /*@START_MENU_TOKEN@*/10/*@END_MENU_TOKEN@*/)
-    }
-}
+
 
 extension View {
     func debugBackground() -> some View {
         modifier(DBG())
-    }
-    func debugBackground_noPad() -> some View {
-        modifier(DBG_noPad())
     }
 }
 

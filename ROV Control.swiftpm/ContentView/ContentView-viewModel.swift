@@ -25,17 +25,20 @@ extension ContentView{
         @Published var rovStatus = ROV_Status()
         @Published var log  = [String : Any]()
         @Published var FPS = 0
-
+        let camera_semaphore = DispatchSemaphore(value: 1)
+        let status_semaphore = DispatchSemaphore(value: 1)
         var FPS_Count = 0
-        // This Function is called when a controller is connected to the Apple TV
         
         
         
-        func GET_Request(addr : Addr){
-            if let url = URL(string: "http://\(addr.rawValue):5656"){
+        func GET_Request(addr : String){
+            print("start")
+            if let url = URL(string: "http://\(addr):5656"){
                 var request = URLRequest(url: url,timeoutInterval: 5)
                 request.httpMethod = "GET"
+                self.camera_semaphore.wait()
                 URLSession.shared.dataTask(with: request) { data, response, error in
+                    defer { self.camera_semaphore.signal() }
                     if let data = data {
                         if let image_from_data = UIImage(data: data){
                             DispatchQueue.main.async {
@@ -56,8 +59,8 @@ extension ContentView{
                 }.resume()
             }
         }
-        func POST_changeTask(addr : Addr, task : OnGoingTask){
-            if let url = URL(string: "http://\(addr.rawValue):5656"){
+        func POST_changeTask(addr : String, task : OnGoingTask){
+            if let url = URL(string: "http://\(addr):5656"){
                 var request = URLRequest(url: url,timeoutInterval: 5)
                 request.httpMethod = "POST"
                 request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -92,8 +95,8 @@ extension ContentView{
             }
             
         }
-        func POST_setMode(addr : Addr,mode:String){
-            if let url = URL(string: "http://\(addr.rawValue):5656"){
+        func POST_setMode(addr : String,mode:String){
+            if let url = URL(string: "http://\(addr):5656"){
                 var request = URLRequest(url: url,timeoutInterval: 5)
                 request.httpMethod = "POST"
                 request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -128,8 +131,8 @@ extension ContentView{
             }
             
         }
-        func POST_Request_Status(addr : Addr, update : OutputState? = nil, power : CGFloat = 0){
-            if let url = URL(string: "http://\(addr.rawValue):5656"){
+        func POST_Request_Status(addr : String, update : OutputState? = nil, power : CGFloat = 0){
+            if let url = URL(string: "http://\(addr):5656"){
                 var request = URLRequest(url: url,timeoutInterval: 5)
                 request.httpMethod = "POST"
                 request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -141,7 +144,9 @@ extension ContentView{
                 if let body = jsonbody {
                     request.httpBody = body
                 }
+                self.status_semaphore.wait()
                 URLSession.shared.dataTask(with: request) { data, response, error in
+                    defer { self.status_semaphore.signal() }
                     if let data = data {
                         do {
                             let status = try JSONDecoder().decode(ROV_Status.self, from: data)

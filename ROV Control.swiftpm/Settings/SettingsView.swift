@@ -19,6 +19,14 @@ struct SettingsView : View{
                     }.pickerStyle(.segmented)
                     
                 }
+                if settings.addr == .custom{
+                    HStack{
+                        Text("Custom Address:")
+                        Color.clear
+                        TextField("e.g., auv.loca", text: $settings.customAddr)
+                            .textFieldStyle(.roundedBorder)
+                    }
+                }
                 HStack{
                     Text("Stream Mode:")
                     Picker("Stream Mode",selection: $settings.streamMode) {
