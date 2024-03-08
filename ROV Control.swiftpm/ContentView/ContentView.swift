@@ -82,15 +82,13 @@ struct ContentView: View {
                 let pitch = Double(viewModel.rovStatus.pitch)
                 let roll = Double(viewModel.rovStatus.roll)
                 let yaw = Double(viewModel.rovStatus.yaw)
-                VStack{
-                    Image(systemName: "airplane.circle.fill")
-                        .font(.title)
-                        .rotationEffect(Angle(degrees: -90))
-                        .rotation3DEffect(Angle(degrees: pitch), axis: (-1,0,0))
-                        .rotation3DEffect(Angle(degrees: roll), axis: (0,1,0))
-                        .rotation3DEffect(Angle(degrees: yaw), axis: (0,0,1))
-                }.debugBackground()
-                    .padding()
+                HStack{
+                    
+                    VStack{
+                        Text("Dep_lev : \(self.viewModel.rovStatus.dep_lev)")
+                    }.debugBackground()
+                        .padding()
+                }
             })
             .overlay(alignment: .bottomLeading, content: {
                 VStack{
