@@ -6,14 +6,10 @@ struct ContentView: View {
     @EnvironmentObject var settings : Settings
     @EnvironmentObject var inputManager : InputManager
     @Environment(\.colorScheme) private var colorScheme
-    @StateObject var viewModel = ViewModel()
-    @StateObject var visionViewModel = VisionViewModel()
+    @State var viewModel = ViewModel()
+    @State var visionViewModel = VisionViewModel()
     @State var tabViewSelection = "main"
     @State var key : String = ""
-    @State var modeShow = false
-    @State var taskShow = false
-    @State var speedPopUp = false
-    @State var debugShow = false
     let blockMaxHeight : CGFloat = 150
     let blockMaxWidth : CGFloat = 150
     
@@ -92,7 +88,7 @@ struct ContentView: View {
             })
             .overlay(alignment: .bottomLeading, content: {
                 VStack{
-                    if self.taskShow{
+                    if self.viewModel.taskShow{
                         ScrollView(.vertical){
                             VStack(alignment: .listRowSeparatorLeading){
                                 
@@ -100,7 +96,7 @@ struct ContentView: View {
                                     Button(action:{
                                         withAnimation{
                                             self.viewModel.POST_changeTask(addr: settings.getAddr(), task: t)
-                                            self.taskShow.toggle()
+                                            self.viewModel.taskShow.toggle()
                                         }
                                     }){
                                         Label(t.rawValue, systemImage: t == .ROV ? "r.circle.fill" : "a.circle.fill")
@@ -112,7 +108,7 @@ struct ContentView: View {
                     }
                     Button(action:{
                         withAnimation{
-                            self.taskShow.toggle()
+                            self.viewModel.taskShow.toggle()
                         }
                     }){
                         let t = viewModel.rovStatus.task
@@ -129,7 +125,7 @@ struct ContentView: View {
             })
             .overlay(alignment:.bottomTrailing,content:{
                 VStack{
-                    if self.modeShow{
+                    if self.viewModel.modeShow{
                         ScrollView(.vertical){
                             VStack(alignment: .listRowSeparatorLeading){
                                 
@@ -137,8 +133,7 @@ struct ContentView: View {
                                     Button(action:{
                                         viewModel.POST_setMode(addr: settings.getAddr(), mode: mode)
                                         withAnimation{
-                                            
-                                            self.modeShow.toggle()
+                                            self.viewModel.modeShow.toggle()
                                         }
                                     }){
                                         Label(mode, systemImage: "\(mode.lowercased().first ?? "1").circle.fill")
@@ -150,7 +145,7 @@ struct ContentView: View {
                     }
                     Button(action:{
                         withAnimation{
-                            self.modeShow.toggle()
+                            self.viewModel.modeShow.toggle()
                         }
                     }){
                         Label{
@@ -182,16 +177,16 @@ struct ContentView: View {
                 HStack{
                     Button(action:{
                         withAnimation{
-                            self.debugShow.toggle()
+                            self.viewModel.debugShow.toggle()
                         }
                     }){
-                        Label("expend", systemImage: self.debugShow ?  "chevron.right.circle.fill": "chevron.left.circle.fill")
+                        Label("expend", systemImage: self.viewModel.debugShow ?  "chevron.right.circle.fill": "chevron.left.circle.fill")
                             .labelStyle(.iconOnly)
                             .font(.title)
                             .debugBackground()
                         
                     }
-                    if self.debugShow{
+                    if self.viewModel.debugShow{
                         let FB = self.inputManager.outputState.FB
                         let LR = self.inputManager.outputState.LR
                         let turn = self.inputManager.outputState.turn_LR
@@ -201,31 +196,31 @@ struct ContentView: View {
                         let UDImg =  UD == 0 ? "minus.circle.fill" : (UD > 0 ? "arrowtriangle.up.circle.fill" : "arrowtriangle.down.circle.fill")
                         let FBImg =  FB == 0 ? "arrow.up.arrow.down.circle.fill" : (FB > 0 ? "arrow.up.circle.fill" : "arrow.down.circle.fill")
                         Label {
-                            Text(String(format: "%d",viewModel.rovStatus.forwardPWM))
+                            Text(String(Int(viewModel.rovStatus.forwardPWM)))
                         } icon: {
                             Image(systemName: FBImg)
                                 .font(.title)
                         }.debugBackground()
                         Label {
-                            Text(String(format: "%d",viewModel.rovStatus.LRPWM))
+                            Text(String(Int(viewModel.rovStatus.LRPWM)))
                         } icon: {
                             Image(systemName: LRImg)
                                 .font(.title)
                         }.debugBackground()
                         Label {
-                            Text(String(format: "%d",viewModel.rovStatus.yawPWM))
+                            Text(String(Int(viewModel.rovStatus.yawPWM)))
                         } icon: {
                             Image(systemName: turnImg)
                                 .font(.title)
                         }.debugBackground()
                         Label {
-                            Text(String(format: "%d",viewModel.rovStatus.depthPWM))
+                            Text(String(Int(viewModel.rovStatus.depthPWM)))
                         } icon: {
                             Image(systemName: UDImg)
                                 .font(.title)
                         }.debugBackground()
                         Label {
-                            Text(String(format: "%d",viewModel.rovStatus.rollPWM))
+                            Text(String(Int(viewModel.rovStatus.rollPWM)))
                         } icon: {
                             Image(systemName: "sleep.circle.fill")
                                 .font(.title)
@@ -236,14 +231,14 @@ struct ContentView: View {
                     Button(action: {
                         withAnimation{
                             //                            settings.outputPower = settings.outputPower.next()
-                            speedPopUp.toggle()
+                            viewModel.speedPopUp.toggle()
                         }
                     }){
                         
                         Text(String(percentage))
                             .debugBackground()
                     }
-                    .popover(isPresented: $speedPopUp, content: {
+                    .popover(isPresented: $viewModel.speedPopUp, content: {
                         HStack(content: {
                             Text("Power:")
                             Picker("Output Power (%)",selection: $settings.outputPower) {
@@ -371,6 +366,10 @@ struct ContentView: View {
                 else if new == gamepad.buttonB{
                     self.viewModel.POST_changeTask(addr: settings.getAddr(), task: .TASK_Demo)
                     print("Demo")
+                }
+                else if new == gamepad.buttonX{
+                    self.viewModel.POST_changeTask(addr: settings.getAddr(), task: .TASK_Qulification)
+                    print("Quli")
                 }
             }
             

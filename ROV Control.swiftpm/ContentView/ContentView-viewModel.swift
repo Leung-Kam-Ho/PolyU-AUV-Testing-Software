@@ -15,21 +15,22 @@ extension ContentView{
         case Surface
         case ROV
     }
-
-    @MainActor class ViewModel : ObservableObject {
-        @Published var stream = true
-        @Published var failCount = 0
-        @Published var waterMark = UIImage(imageLiteralResourceName: "Watermark")
-        @Published var waterMarkB = UIImage(imageLiteralResourceName: "Watermark").withRenderingMode(.alwaysTemplate).withTintColor(.black)
-        @Published var footage : UIImage? = nil
-        @Published var rovStatus = ROV_Status()
-        @Published var log  = [String : Any]()
-        @Published var FPS = 0
+    @Observable
+    class ViewModel {
+        var stream = true
+        var modeShow = false
+        var taskShow = false
+        var speedPopUp = false
+        var debugShow = false
+        var waterMark = UIImage(imageLiteralResourceName: "Watermark")
+        var waterMarkB = UIImage(imageLiteralResourceName: "Watermark").withRenderingMode(.alwaysTemplate).withTintColor(.black)
+        var footage : UIImage? = nil
+        var rovStatus = ROV_Status()
+        var log  = [String : Any]()
+        var FPS = 0
         let camera_semaphore = DispatchSemaphore(value: 1)
         let status_semaphore = DispatchSemaphore(value: 1)
         var FPS_Count = 0
-        
-        
         
         func GET_Request(addr : String){
             print("start")

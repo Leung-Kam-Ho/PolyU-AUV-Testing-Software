@@ -13,13 +13,14 @@ enum ProcessingState {
     case idle
     case waiting
 }
-class VisionViewModel : ObservableObject{
+@Observable
+class VisionViewModel{
     
-    @Published var detectionOverlay = Color.clear
-    @Published var processingState : ProcessingState = .waiting
-    @Published var requests = [VNCoreMLRequest]()
-    @Published var imageToProcess : UIImage? = nil
-    @Published var result : UIImage? = nil
+    var detectionOverlay = Color.clear
+    var processingState : ProcessingState = .waiting
+    var requests = [VNCoreMLRequest]()
+    var imageToProcess : UIImage? = nil
+    var result : UIImage? = nil
     
     func setupObjectDetectionModel(_ modelURL : URL) -> Bool{
         do {
