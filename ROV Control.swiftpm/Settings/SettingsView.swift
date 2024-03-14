@@ -61,14 +61,6 @@ struct SettingsView : View{
                         }
                     }.pickerStyle(.segmented)
                 }
-                Toggle(isOn: $settings.virtualJoyStick) {
-                    // further development
-                    Text("Enable Virtual Joystick")
-                }
-                Toggle(isOn: $settings.compactDebugView) {
-                    // further development
-                    Text("Enable Compact Debug View")
-                }
                 HStack{
                     Text("Object Detection Model")
                     Spacer()
@@ -93,11 +85,9 @@ struct SettingsView : View{
                         if url.startAccessingSecurityScopedResource(){
                             settings.modelURL = url
                         }
-        //                url.stopAccessingSecurityScopedResource()
                     case .failure(let error):
                         print("loading model \(error)")
                     }
-                    
                 })
         }
         

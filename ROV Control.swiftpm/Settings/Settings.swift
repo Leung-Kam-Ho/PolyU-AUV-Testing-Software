@@ -9,6 +9,17 @@ enum Addr : String, CaseIterable{
     case custom = "custom Address"
 }
 
+enum OnGoingTask : String, CaseIterable{
+    case TASK_Demo
+    case TASK_Qulification
+    case TASK_Navigation
+    case TASK_Acquisition
+    case Task_Reacquisition
+    case Task_Localization
+    case Surface
+    case ROV
+}
+
 enum BackgroundMode : String, CaseIterable{
     case dotBreathing
     case breathing
@@ -54,8 +65,6 @@ class Settings : ObservableObject{
     @Published var modelState : ModelState = .noModel
     @Published var modelURL : URL? = nil
     @Published var outputPower : OutputPower = .Quarter
-    @Published var virtualJoyStick = false
-    @Published var compactDebugView = true
     @Published var streamMode : StreamMode = .Pause
     func getAddr() -> String{
         if self.addr == .custom{

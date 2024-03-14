@@ -7,8 +7,7 @@ struct ContentView: View {
     @EnvironmentObject var inputManager : InputManager
     @Environment(\.colorScheme) private var colorScheme
     @State var viewModel = ViewModel()
-    @State var visionViewModel = VisionViewModel()
-    @State var tabViewSelection = "main"
+    @State var tabViewSelection = "Main"
     @State var key : String = ""
     let blockMaxHeight : CGFloat = 150
     let blockMaxWidth : CGFloat = 150
@@ -75,11 +74,7 @@ struct ContentView: View {
         let infoView =
         Color.clear
             .overlay(alignment: .top, content:{
-                let pitch = Double(viewModel.rovStatus.pitch)
-                let roll = Double(viewModel.rovStatus.roll)
-                let yaw = Double(viewModel.rovStatus.yaw)
                 HStack{
-                    
                     VStack{
                         Text("Dep_lev : \(self.viewModel.rovStatus.dep_lev)")
                     }.debugBackground()
@@ -91,7 +86,6 @@ struct ContentView: View {
                     if self.viewModel.taskShow{
                         ScrollView(.vertical){
                             VStack(alignment: .listRowSeparatorLeading){
-                                
                                 ForEach(OnGoingTask.allCases, id:\.self){ t in
                                     Button(action:{
                                         withAnimation{
@@ -161,7 +155,7 @@ struct ContentView: View {
             })
             .overlay(alignment: .topLeading, content: {
                 HStack{
-                    Text("FPS: \(viewModel.FPS)")
+                    Text("FPS: \(viewModel.fps_Counter.getFPS())")
                         .debugBackground()
                 }.padding()
                 
@@ -175,6 +169,19 @@ struct ContentView: View {
             })
             .overlay(alignment: .bottom, content: {
                 HStack{
+                    Button(action:{
+                        withAnimation{
+                            let addr = self.settings.getAddr()
+                            let output = !self.viewModel.clawOpen
+                            self.viewModel.POST_Command_Claw(addr: addr, openArm: output)
+                        }
+                    }){
+                        Label("Claw", systemImage: self.viewModel.clawOpen ?  "hands.clap" : "hands.clap.fill")
+                            .labelStyle(.iconOnly)
+                            .font(.title)
+                            .debugBackground()
+                        
+                    }
                     Button(action:{
                         withAnimation{
                             self.viewModel.debugShow.toggle()
@@ -236,6 +243,7 @@ struct ContentView: View {
                     }){
                         
                         Text(String(percentage))
+                            .font(.title)
                             .debugBackground()
                     }
                     .popover(isPresented: $viewModel.speedPopUp, content: {
@@ -248,7 +256,7 @@ struct ContentView: View {
                                     
                                 }
                             }.pickerStyle(.segmented)
-                        })
+                        }).padding()
                     })
                     .buttonStyle(.plain)
                     
@@ -270,7 +278,7 @@ struct ContentView: View {
                 }
             })
         let mainView =
-        CameraView(image: viewModel.footage ?? ( colorScheme == .dark ? viewModel.waterMark : viewModel.waterMarkB), mask : settings.generalObjectDetection ? visionViewModel.result : nil)
+        CameraView(image: viewModel.footage ?? ( colorScheme == .dark ? viewModel.waterMark : viewModel.waterMarkB), mask : settings.generalObjectDetection ? self.viewModel.visionModel.result : nil)
             .tag("Camera")
             .focusable()
             .onKeyPress(phases: .all, action: { press in
@@ -303,12 +311,10 @@ struct ContentView: View {
                         mainView
                         //                                    .frame(width: width,height:height)
                         TabView(selection:$tabViewSelection,content: {
-                            
-                            
                             Color.clear
                                 .tag("clear")
                             infoView
-                                .tag("main")
+                                .tag("Main")
                             VStack{
                                 SettingsView()
                                     .tag("Settings")
@@ -325,8 +331,13 @@ struct ContentView: View {
                     
                 }else{
                     VStack{
-                        mainView
-                            .clipShape(.rect(cornerRadius: 25))
+                        TabView(selection:$tabViewSelection,content: {
+                            mainView
+                                .tag("Main")
+                            SettingsView()
+                                .tag("Settings")
+                        }).clipShape(.rect(cornerRadius: 25))
+                            .tabViewStyle(.page)
                             .frame(height: CGFloat(height*0.4))
                         
                         VStack{
@@ -378,7 +389,7 @@ struct ContentView: View {
             if let modelURL = new{
                 settings.modelState = .uploading
                 DispatchQueue.global(qos: .userInitiated).async {
-                    let success = visionViewModel.setupObjectDetectionModel(modelURL)
+                    let success = self.viewModel.visionModel.setupObjectDetectionModel(modelURL)
                     if success{
                         settings.modelState = .uploaded
                     }else{
@@ -390,35 +401,35 @@ struct ContentView: View {
         })
         .onAppear(perform: {
             self.inputManager.ObserveForGameControllers()
-            DispatchQueue.global(qos: .userInitiated).async{
-                while true{
-                    if settings.streamMode == .Both || settings.streamMode == .VideoOnly{
-                        viewModel.GET_Request(addr:settings.getAddr())
-                        if settings.generalObjectDetection{
-                            if let footage = viewModel.footage{
-                                visionViewModel.processImage_YOLOv3(footage)
-                            }
-                        }
-                    }
-                    
-                }
-            }
-            DispatchQueue.global(qos: .userInitiated).async{
-                while true{
-                    if settings.streamMode == .Both || settings.streamMode == .InputOnly{
-                        viewModel.POST_Request_Status(addr: settings.getAddr(), update: self.inputManager.outputState,power:settings.outputPower.rawValue)
-                    }
-                }
-            }
-            Timer.scheduledTimer(withTimeInterval: 1, repeats: true){ timer in
-                viewModel.FPS = viewModel.FPS_Count
-                viewModel.FPS_Count = 0
-            }
-            
+            self.StartCameraLoop()
+            self.StartCommandLoop()
         })
         
     }
-    
+    func StartCommandLoop(){
+        DispatchQueue.global(qos: .userInitiated).async{
+            while true{
+                if settings.streamMode == .Both || settings.streamMode == .InputOnly{
+                    viewModel.POST_Request_Status(addr: settings.getAddr(), update: self.inputManager.outputState,power:settings.outputPower.rawValue)
+                }
+            }
+        }
+    }
+    func StartCameraLoop(){
+        DispatchQueue.global(qos: .userInitiated).async{
+            while true{
+                if settings.streamMode == .Both || settings.streamMode == .VideoOnly{
+                    viewModel.GET_Request(addr:settings.getAddr())
+                    if settings.generalObjectDetection{
+                        if let footage = viewModel.footage{
+                            self.viewModel.visionModel.processImage_YOLOv3(footage)
+                        }
+                    }
+                }
+                
+            }
+        }
+    }
 }
 
 

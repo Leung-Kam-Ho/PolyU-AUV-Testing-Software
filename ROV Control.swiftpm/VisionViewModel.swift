@@ -81,7 +81,6 @@ class VisionViewModel{
         return drawnImage
     }
     func processImage_YOLOv3(_ image : UIImage){
-         
         if self.processingState == .idle{
             self.imageToProcess = image
             let handler = VNImageRequestHandler(cgImage: image.cgImage!, orientation: .downMirrored)
