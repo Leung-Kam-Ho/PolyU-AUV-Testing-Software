@@ -369,9 +369,7 @@ struct ContentView: View {
             if let new = new,
                let gamepad = inputManager.gamepad{
                 if new == gamepad.buttonA{
-                    self.viewModel.POST_changeTask(addr: settings.getAddr()
-                                                   
-                                                   , task: .ROV)
+                    self.viewModel.POST_changeTask(addr: settings.getAddr(), task: .ROV)
                     print("ROV")
                 }
                 else if new == gamepad.buttonB{
@@ -381,6 +379,13 @@ struct ContentView: View {
                 else if new == gamepad.buttonX{
                     self.viewModel.POST_changeTask(addr: settings.getAddr(), task: .TASK_Qulification)
                     print("Quli")
+                }else if new == gamepad.leftTrigger{
+                    self.viewModel.POST_Command_Claw(addr: settings.getAddr(), openArm: true)
+                    print("Open")
+                }
+                else if new == gamepad.rightTrigger{
+                    self.viewModel.POST_Command_Claw(addr: settings.getAddr(), openArm: false)
+                    print("Close")
                 }
             }
             

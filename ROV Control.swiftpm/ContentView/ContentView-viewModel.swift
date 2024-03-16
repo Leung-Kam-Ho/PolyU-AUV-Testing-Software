@@ -45,9 +45,10 @@ extension ContentView{
         
         func GET_Request(addr : String){
             if let url = URL(string: "http://\(addr):5656"){
-                var request = URLRequest(url: url,timeoutInterval: 5)
+                var request = URLRequest(url: url, timeoutInterval: TimeInterval(0.1))
                 request.httpMethod = "GET"
                 self.camera_semaphore.wait()
+                let desiredTimeout: Float = 0.1  // Timeout in seconds (with millisecond precision)
                 URLSession.shared.dataTask(with: request) { data, response, error in
                     defer { self.camera_semaphore.signal() }
                     if let data = data {
