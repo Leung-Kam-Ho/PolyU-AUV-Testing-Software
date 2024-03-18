@@ -393,6 +393,12 @@ struct ContentView: View {
                 else if new == gamepad.rightTrigger{
                     self.viewModel.POST_Command_Claw(addr: settings.getAddr(), openArm: false)
                     print("Close")
+                }else if new == gamepad.buttonY{
+                    if self.settings.streamMode != .Pause{
+                        self.settings.streamMode = .Pause
+                    }else{
+                        self.settings.streamMode = .Both
+                    }
                 }
             }
             
