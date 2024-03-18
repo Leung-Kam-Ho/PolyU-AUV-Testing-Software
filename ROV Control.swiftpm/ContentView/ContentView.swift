@@ -76,6 +76,11 @@ struct ContentView: View {
             .overlay(alignment: .top, content:{
                 HStack{
                     VStack{
+                        let yaw_ref = Int(self.viewModel.rovStatus.yaw_ref)
+                        Text("Yaw ref : \(yaw_ref)")
+                    }.debugBackground()
+                        .padding()
+                    VStack{
                         Text("Dep_lev : \(self.viewModel.rovStatus.dep_lev)")
                     }.debugBackground()
                         .padding()
@@ -155,8 +160,24 @@ struct ContentView: View {
             })
             .overlay(alignment: .topLeading, content: {
                 HStack{
-                    Text("FPS: \(viewModel.fps_Counter.getFPS())")
+                    let paused = (settings.streamMode == .Pause)
+                    Button(action:{
+                        withAnimation{
+                            if paused{
+                                settings.streamMode = .Both
+                            }else{
+                                settings.streamMode = .Pause
+                            }
+                            
+                        }
+                    }){
+                        Image(systemName: paused ? "pause.fill": "play.fill")
+                    }
+                    .debugBackground()
+                    
+                    Text(paused ? "Stream Paused" : "FPS: \(viewModel.fps_Counter.getFPS())")
                         .debugBackground()
+                    
                 }.padding()
                 
                 
@@ -237,7 +258,6 @@ struct ContentView: View {
                     let percentage = Int(settings.outputPower.rawValue)
                     Button(action: {
                         withAnimation{
-                            //                            settings.outputPower = settings.outputPower.next()
                             viewModel.speedPopUp.toggle()
                         }
                     }){
@@ -263,19 +283,6 @@ struct ContentView: View {
                     
                 }
                 .padding()
-            })
-            .overlay(alignment: .center, content: {
-                if settings.streamMode == .Pause{
-                    Button(action:{
-                        withAnimation{
-                            settings.streamMode = .Both
-                        }
-                    }){
-                        Label("Stream Paused", systemImage: "play.fill")
-                    }
-                    .debugBackground()
-                    
-                }
             })
         let mainView =
         CameraView(image: viewModel.footage ?? ( colorScheme == .dark ? viewModel.waterMark : viewModel.waterMarkB), mask : settings.generalObjectDetection ? self.viewModel.visionModel.result : nil)

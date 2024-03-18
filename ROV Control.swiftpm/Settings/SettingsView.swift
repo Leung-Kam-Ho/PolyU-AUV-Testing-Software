@@ -51,7 +51,7 @@ struct SettingsView : View{
                     
                 }
                 HStack{
-                    Text("Output Power (%)")
+                    Text("Power Mode")
                     Spacer()
                     Picker("Output Power (%)",selection: $settings.outputPower) {
                         ForEach(OutputPower.allCases, id:\.self){ outputPower in

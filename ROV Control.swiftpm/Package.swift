@@ -16,7 +16,7 @@ let package = Package(
         .iOSApplication(
             name: "ROV Control",
             targets: ["AppModule"],
-            bundleIdentifier: "kam.ROV.control",
+            bundleIdentifier: "KamHo.ROV.control",
             teamIdentifier: "TGBMMRU7P7",
             displayVersion: "1.0",
             bundleVersion: "1",

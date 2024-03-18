@@ -35,10 +35,13 @@ enum ModelState : String{
 }
 
 enum OutputPower : CGFloat, CaseIterable{
-    case Per_10 = 10
-    case Quarter = 33
-    case Half = 50
-    case Full = 100
+    case LogicTest = 20
+    case LabTest = 30
+    case PoolTest = 50
+    case SAUVC_A = 60
+    case SAUVC_B = 70
+    case SAUVC_C = 80
+    case Full = 90
 }
 
 enum StreamMode : String, CaseIterable{
@@ -64,7 +67,7 @@ class Settings : ObservableObject{
     @Published var generalObjectDetection = true
     @Published var modelState : ModelState = .noModel
     @Published var modelURL : URL? = nil
-    @Published var outputPower : OutputPower = .Quarter
+    @Published var outputPower : OutputPower = .SAUVC_C
     @Published var streamMode : StreamMode = .Pause
     func getAddr() -> String{
         if self.addr == .custom{

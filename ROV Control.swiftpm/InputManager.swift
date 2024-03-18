@@ -67,6 +67,14 @@ class InputManager : ObservableObject{
         case gamepad.leftThumbstick:
             self.outputState.FB = CGFloat(gamepad.leftThumbstick.yAxis.value)
             self.outputState.LR = CGFloat(gamepad.leftThumbstick.xAxis.value)
+        case gamepad.dpad.up:
+            self.outputState.FB = 1
+        case gamepad.dpad.down:
+            self.outputState.FB = -1
+        case gamepad.dpad.left:
+            self.outputState.LR = -1
+        case gamepad.dpad.right:
+            self.outputState.LR = 1
         case gamepad.leftShoulder:
             self.outputState.turn_LR = (gamepad.leftShoulder.isPressed ? -1 : 0)
         case gamepad.rightShoulder:
